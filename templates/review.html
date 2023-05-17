@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Product Reviews</title>
+  </head>
+  <body>
+    <h1>Product Reviews</h1>
+    <hr>
+    <h2>Submit a Review</h2>
+    <form action="/submit_review" method="POST">
+      <label for="rating">Rating (1-5): </label>
+      <input type="number" name="rating" id="rating" min="1" max="5" required>
+      <br><br>
+      <label for="description">Description: </label>
+      <textarea name="description" id="description" rows="4" cols="50" required></textarea>
+      <br><br>
+      <input type="submit" value="Submit">
+    </form>
+    <hr>
+    <h2>Filter Reviews</h2>
+    <form action="/filter_reviews" method="POST">
+      <label for="rating_filter">Rating: </label>
+      <select name="rating_filter" id="rating_filter">
+        <option value="5">5 stars</option>
+        <option value="4">4 stars</option>
+        <option value="3">3 stars</option>
+        <option value="2">2 stars</option>
+        <option value="1">1 star</option>
+      </select>
+      <input type="submit" value="Filter">
+    </form>
+    <hr>
+    <h2>Product Reviews</h2>
+    {% for review in reviews %}
+      <div>
+        <h3>Rating: {{ review.rating }}/5</h3>
+        <p>{{ review.description }}</p>
+      </div>
+      <hr>
+    {% endfor %}
+  </body>
+</html>
