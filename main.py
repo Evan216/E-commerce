@@ -103,8 +103,9 @@ def update():
         subTotal = qty * price
         # Insert selected shirt into shopping cart
         db.session.execute("INSERT INTO cart (id, qty, samplename, image, price, subTotal) VALUES (:id, :qty, :samplename, :image, :price, :subTotal)", params={"id": id, "qty": qty, "samplename": samplename, "image": image, "price": price, "subTotal": subTotal})
-        shoppingCart = db.session.execute("SELECT samplename, image, SUM(qty), SUM(subTotal), price, id FROM cart GROUP BY samplename")
-        shops = list(shoppingCart)
+        shoppingCart = db.session.execute("SELECT samplename, image, SUM(qty), SUM(subTotal), price, id FROM cart GROUP BY samplename, image, price, id")
+
+        shoppingCart = list(shoppingCart)
         shopLen = len(shoppingCart)
         # Rebuild shopping cart
         for i in range(shopLen):
@@ -193,12 +194,12 @@ def remove():
     # Get the id of shirt selected to be removed
     out = int(request.args.get("id"))
     # Remove shirt from shopping cart
-    db.session.execute("DELETE from cart WHERE id=:id", id=out)
+    db.session.execute("DELETE from cart WHERE id=:id", {'id': out})
     # Initialize shopping cart variables
     totItems, total, display = 0, 0, 0
     # Rebuild shopping cart
-    shoppingCart = db.session.execute("SELECT samplename, image, SUM(qty), SUM(subTotal), price, id FROM cart GROUP BY samplename")
-    shops = list(shoppingCart)
+    shoppingCart = db.session.execute("SELECT samplename, image, SUM(qty), SUM(subTotal), price, id FROM cart GROUP BY samplename, image, price, id")
+    shoppingCart = list(shoppingCart)
     shopLen = len(shoppingCart)
     for i in range(shopLen):
         total += shoppingCart[i]["SUM(subTotal)"]
@@ -206,7 +207,7 @@ def remove():
     # Turn on "remove success" flag
     display = 1
     # Render shopping cart
-    return render_template ("cart.html", shoppingCart=shoppingCart, shopLen=shopLen, total=total, totItems=totItems, display=display, session=session )
+    return render_template("cart.html", shoppingCart=shoppingCart, shopLen=shopLen, total=total, totItems=totItems, display=display, session=session)
 
 
 @app.route("/login/", methods=["GET"])
@@ -327,7 +328,7 @@ class reviews(db.Model):
     description = db.Column(db.Text, nullable=False)
 
 
-@app.route('/reviews', methods=['GET', 'POST'])
+@app.route('/reviews/', methods=['GET', 'POST'])
 def reviews():
     if request.method == 'POST':
         rating = request.form['rating']
@@ -350,7 +351,7 @@ def reviews():
             reviews = reviews.query.all()
         return render_template('reviews.html', reviews=reviews, rating_filter=rating_filter)
 
-@app.route('/viewchats')
+@app.route('/viewchats/')
 def viewchats():
     user_id = session.get('id')
 
@@ -366,7 +367,7 @@ def viewchats():
     return render_template('chats.html', messages=messages)
 
 
-@app.route('/send_message', methods=['POST'])
+@app.route('/send_message/', methods=['POST'])
 def send_message():
     sender_id = session.get('id')
     recipient_id = request.form['recipient_id']
@@ -382,6 +383,23 @@ def send_message():
 
     flash("Message sent successfully!")
     return redirect(url_for('viewchats'))
+
+@app.route('/account/', methods=["GET"])
+def account():
+    id = session['id']
+    user = User.query.get(id)
+    query = text("SELECT username, fname, lname, email FROM users WHERE id = :id")
+    result = db.session.execute(query, {"id": id}).fetchone()
+    if result is not None:
+        username, fname, lname, email = result
+    else:
+        # handle the case when the user is not found
+        # for example, redirect to the login page
+        return redirect(url_for('login'))
+    return render_template('account.html', user=user, username=username, fname=fname, lname=lname, email=email)
+
+
+
 
 
 if __name__ == '__main__':
